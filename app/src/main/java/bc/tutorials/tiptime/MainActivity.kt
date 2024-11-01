@@ -1,6 +1,7 @@
 package bc.tutorials.tiptime
 
 import android.os.Bundle
+import android.widget.ToggleButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -33,8 +34,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import bc.tutorials.tiptime.ui.theme.TipTimeTheme
 import java.text.NumberFormat
+import kotlin.math.ceil
+import kotlin.math.round
+import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,11 +69,24 @@ private fun calculateTip(amount: Double, tipPercent: Double = 15.0): String {
     return NumberFormat.getCurrencyInstance().format(tip)
 }
 
+private fun calculateTipValue(amount: Double, tipPercent: Double = 15.0): String {
+    val tip = tipPercent / 100 * amount
+
+    return NumberFormat.getCurrencyInstance().format(ceil(tip))
+}
+
 @Composable
 fun TipTimeLayout() {
+    var percentInput by remember { mutableStateOf("") }
     var amountInput by remember { mutableStateOf("") }
+    var roundUp by remember { mutableStateOf(false) }
     val amount = amountInput.toDoubleOrNull() ?: 0.0
-    val tip = calculateTip(amount)
+    var tipPercent = percentInput.toDoubleOrNull() ?: 0.0
+    var tip = calculateTip(amount, tipPercent)
+
+    if(roundUp) {
+       tip = calculateTipValue(amount, tipPercent).toString()
+    }
 
     Column(
         modifier = Modifier
@@ -78,13 +103,38 @@ fun TipTimeLayout() {
                 .padding(bottom = 16.dp, top = 40.dp)
                 .align(alignment = Alignment.Start)
         )
-        EditNumberField(value = amountInput,
+        EditBillAmountNumberField(value = amountInput,
             onValueChange = { amountInput = it },
             modifier = Modifier
                 .padding(bottom = 32.dp)
                 .fillMaxWidth())
+        EditCustomTipAmountNumberField(value = percentInput,
+            onValueChange = { percentInput = it },
+            modifier = Modifier
+                .padding(bottom = 32.dp)
+                .fillMaxWidth())
+        Row(modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            ) {
+            Text(stringResource(R.string.round_up_tip))
+            Switch( modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentWidth(Alignment.End),
+                checked = roundUp,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.Green,
+                    uncheckedThumbColor = Color.DarkGray,
+                ),
+                onCheckedChange = {
+                    roundUp = it
+                }
+
+            )
+        }
+
         Text(
-            text = stringResource(R.string.tip_amount, "${tip}"),
+            text = stringResource(R.string.tip_amount, tip),
             style = MaterialTheme.typography.displaySmall,
             fontSize = TextUnit(type = TextUnitType.Sp, value = 16F)
         )
@@ -93,17 +143,35 @@ fun TipTimeLayout() {
 }
 
 @Composable
-fun EditNumberField(
+fun EditBillAmountNumberField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier) {
+    
+    TextField(
+        value = value,
+        leadingIcon = { Icon(painter = painterResource(id = R.drawable.money), null) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        singleLine = true,
+        label = { Text(stringResource(R.string.bill_amount))},
+        onValueChange = onValueChange,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun EditCustomTipAmountNumberField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier) {
 
-
     TextField(
+        value = value,
+        leadingIcon = { Icon(painter = painterResource(id = R.drawable.percent), null) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true,
-        label = { Text(stringResource(R.string.bill_amount))},
-        value = value,
+        label = { Text(stringResource(R.string.tip_percentage))},
+
         onValueChange = onValueChange,
         modifier = modifier
     )
