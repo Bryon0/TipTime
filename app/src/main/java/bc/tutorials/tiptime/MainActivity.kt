@@ -1,7 +1,6 @@
 package bc.tutorials.tiptime
 
 import android.os.Bundle
-import android.widget.ToggleButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -34,7 +33,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Icon
@@ -43,10 +41,10 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import bc.tutorials.tiptime.ui.theme.TipTimeTheme
+import org.jetbrains.annotations.VisibleForTesting
 import java.text.NumberFormat
 import kotlin.math.ceil
-import kotlin.math.round
-import kotlin.math.roundToInt
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,15 +62,14 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private fun calculateTip(amount: Double, tipPercent: Double = 15.0): String {
-    val tip = tipPercent / 100 * amount
+@VisibleForTesting
+internal fun calculateTip(amount: Double, tipPercent: Double = 15.0, roundUp: Boolean): String {
+    var tip = tipPercent / 100 * amount
+
+    if(roundUp) {
+        tip = ceil(tip)
+    }
     return NumberFormat.getCurrencyInstance().format(tip)
-}
-
-private fun calculateTipValue(amount: Double, tipPercent: Double = 15.0): String {
-    val tip = tipPercent / 100 * amount
-
-    return NumberFormat.getCurrencyInstance().format(ceil(tip))
 }
 
 @Composable
@@ -81,12 +78,8 @@ fun TipTimeLayout() {
     var amountInput by remember { mutableStateOf("") }
     var roundUp by remember { mutableStateOf(false) }
     val amount = amountInput.toDoubleOrNull() ?: 0.0
-    var tipPercent = percentInput.toDoubleOrNull() ?: 0.0
-    var tip = calculateTip(amount, tipPercent)
-
-    if(roundUp) {
-       tip = calculateTipValue(amount, tipPercent).toString()
-    }
+    val tipPercent = percentInput.toDoubleOrNull() ?: 0.0
+    val tip = calculateTip(amount, tipPercent, roundUp)
 
     Column(
         modifier = Modifier
